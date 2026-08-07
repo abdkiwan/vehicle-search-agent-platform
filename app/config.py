@@ -6,9 +6,20 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "Vehicle Search Agent Platform"
     app_env: str = "development"
+
     database_url: str
     db_pool_size: int = 5
     db_max_overflow: int = 5
+
+    aws_region: str = "eu-central-1"
+    aws_profile: str | None = None
+    bedrock_embedding_model_id: str = (
+        "amazon.titan-embed-text-v2:0"
+    )
+
+    hybrid_candidate_limit: int = 15
+    hybrid_default_result_limit: int = 5
+    rrf_k: int = 60
 
     model_config = SettingsConfigDict(
         env_file=".env",
