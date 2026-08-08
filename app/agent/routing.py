@@ -34,17 +34,12 @@ def route_after_structured_search(
     state: AgentState,
 ) -> Literal[
     "documents",
-    "end",
+    "context",
 ]:
-    """
-    Hybrid requests continue to document retrieval.
-    Pure structured requests stop.
-    """
-
     if (
         state["plan"].route
         == SearchRoute.HYBRID
     ):
         return "documents"
 
-    return "end"
+    return "context"

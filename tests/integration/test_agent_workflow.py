@@ -141,6 +141,27 @@ async def test_hybrid_workflow():
         is not None
     )
 
+    assert payload["context"] is not None
+
+    assert payload["context"]["has_evidence"] is True
+
+    assert (
+        payload["context"]["stats"]
+        ["vehicles_included"]
+        > 0
+    )
+
+    assert (
+        payload["context"]["stats"]
+        ["document_chunks_included"]
+        > 0
+    )
+
+    context_text = payload["context"]["text"]
+
+    for citation in payload["context"]["citations"]:
+        assert citation["citation"] in context_text
+
 
 @pytest.mark.asyncio
 @pytest.mark.integration

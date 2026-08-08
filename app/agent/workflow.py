@@ -1,11 +1,17 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agent.context import AgentRuntimeContext
-from app.agent.graph import vehicle_search_graph
+from app.agent.context import (
+    AgentRuntimeContext,
+)
+from app.agent.graph import (
+    vehicle_search_graph,
+)
 from app.retrieval.embeddings import (
     BedrockEmbeddingService,
 )
-from app.schemas.document_search import UserRole
+from app.schemas.document_search import (
+    UserRole,
+)
 from app.schemas.query_plan import (
     UnifiedSearchResponse,
 )
@@ -24,19 +30,25 @@ class VehicleSearchWorkflow:
         self._context = AgentRuntimeContext(
             session=session,
             role=role,
-            query_planner=QueryPlannerService(),
-            embeddings=BedrockEmbeddingService(),
+            query_planner=(
+                QueryPlannerService()
+            ),
+            embeddings=(
+                BedrockEmbeddingService()
+            ),
         )
 
     async def execute(
         self,
         query: str,
     ) -> UnifiedSearchResponse:
-        result = await vehicle_search_graph.ainvoke(
-            {
-                "query": query,
-            },
-            context=self._context,
+        result = (
+            await vehicle_search_graph.ainvoke(
+                {
+                    "query": query,
+                },
+                context=self._context,
+            )
         )
 
         return UnifiedSearchResponse(
@@ -47,5 +59,8 @@ class VehicleSearchWorkflow:
             ),
             document_results=result.get(
                 "document_results"
+            ),
+            context=result.get(
+                "context"
             ),
         )

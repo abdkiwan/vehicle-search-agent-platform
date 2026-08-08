@@ -21,11 +21,16 @@ class Settings(BaseSettings):
         "eu.amazon.nova-lite-v1:0"
     )
 
-    bedrock_planner_max_tokens: int = 3000
+    bedrock_planner_max_tokens: int = 800
 
     hybrid_candidate_limit: int = 15
     hybrid_default_result_limit: int = 5
     rrf_k: int = 60
+
+    context_max_vehicles: int = 8
+    context_max_document_chunks: int = 5
+    context_max_chars: int = 14000
+    context_max_chunk_chars: int = 1600
 
     model_config = SettingsConfigDict(
         env_file=".env",

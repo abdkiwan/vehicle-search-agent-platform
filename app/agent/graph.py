@@ -5,10 +5,15 @@ from langgraph.graph import (
 )
 
 from app.agent.context import AgentRuntimeContext
+from app.agent.nodes.context_builder import (
+    build_context,
+)
 from app.agent.nodes.document_search import (
     document_search,
 )
-from app.agent.nodes.planning import plan_query
+from app.agent.nodes.planning import (
+    plan_query,
+)
 from app.agent.nodes.structured_search import (
     structured_search,
 )
@@ -40,6 +45,11 @@ def build_vehicle_search_graph():
         document_search,
     )
 
+    builder.add_node(
+        "build_context",
+        build_context,
+    )
+
     builder.add_edge(
         START,
         "plan_query",
@@ -49,9 +59,15 @@ def build_vehicle_search_graph():
         "plan_query",
         route_after_planning,
         {
-            "structured": "structured_search",
-            "documents": "document_search",
-            "unsupported": END,
+            "structured": (
+                "structured_search"
+            ),
+            "documents": (
+                "document_search"
+            ),
+            "unsupported": (
+                "build_context"
+            ),
         },
     )
 
@@ -59,13 +75,22 @@ def build_vehicle_search_graph():
         "structured_search",
         route_after_structured_search,
         {
-            "documents": "document_search",
-            "end": END,
+            "documents": (
+                "document_search"
+            ),
+            "context": (
+                "build_context"
+            ),
         },
     )
 
     builder.add_edge(
         "document_search",
+        "build_context",
+    )
+
+    builder.add_edge(
+        "build_context",
         END,
     )
 
