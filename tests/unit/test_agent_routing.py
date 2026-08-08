@@ -95,7 +95,7 @@ def test_hybrid_continues_to_documents():
     )
 
 
-def test_structured_stops_after_vehicle_search():
+def test_structured_continues_to_context():
     state = {
         "query": "test",
         "plan": make_plan(
@@ -107,5 +107,5 @@ def test_structured_stops_after_vehicle_search():
         route_after_structured_search(
             state
         )
-        == "end"
+        == "context"
     )

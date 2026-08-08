@@ -1,5 +1,6 @@
 from typing_extensions import TypedDict
 
+from app.schemas.context import ContextPackage
 from app.schemas.document_search import (
     DocumentSearchResponse,
 )
@@ -23,3 +24,5 @@ class AgentState(TypedDict, total=False):
     structured_results: VehicleSearchResponse
 
     document_results: DocumentSearchResponse
+
+    context: ContextPackage
