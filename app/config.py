@@ -17,6 +17,12 @@ class Settings(BaseSettings):
         "amazon.titan-embed-text-v2:0"
     )
 
+    bedrock_planner_model_id: str = (
+        "eu.amazon.nova-lite-v1:0"
+    )
+
+    bedrock_planner_max_tokens: int = 3000
+
     hybrid_candidate_limit: int = 15
     hybrid_default_result_limit: int = 5
     rrf_k: int = 60
