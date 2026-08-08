@@ -1,0 +1,77 @@
+from langgraph.graph import (
+    END,
+    START,
+    StateGraph,
+)
+
+from app.agent.context import AgentRuntimeContext
+from app.agent.nodes.document_search import (
+    document_search,
+)
+from app.agent.nodes.planning import plan_query
+from app.agent.nodes.structured_search import (
+    structured_search,
+)
+from app.agent.routing import (
+    route_after_planning,
+    route_after_structured_search,
+)
+from app.agent.state import AgentState
+
+
+def build_vehicle_search_graph():
+    builder = StateGraph(
+        state_schema=AgentState,
+        context_schema=AgentRuntimeContext,
+    )
+
+    builder.add_node(
+        "plan_query",
+        plan_query,
+    )
+
+    builder.add_node(
+        "structured_search",
+        structured_search,
+    )
+
+    builder.add_node(
+        "document_search",
+        document_search,
+    )
+
+    builder.add_edge(
+        START,
+        "plan_query",
+    )
+
+    builder.add_conditional_edges(
+        "plan_query",
+        route_after_planning,
+        {
+            "structured": "structured_search",
+            "documents": "document_search",
+            "unsupported": END,
+        },
+    )
+
+    builder.add_conditional_edges(
+        "structured_search",
+        route_after_structured_search,
+        {
+            "documents": "document_search",
+            "end": END,
+        },
+    )
+
+    builder.add_edge(
+        "document_search",
+        END,
+    )
+
+    return builder.compile()
+
+
+vehicle_search_graph = (
+    build_vehicle_search_graph()
+)

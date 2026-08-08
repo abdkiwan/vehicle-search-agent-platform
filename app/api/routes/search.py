@@ -6,17 +6,19 @@ from fastapi import (
     Depends,
     HTTPException,
 )
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 
+from app.agent.workflow import (
+    VehicleSearchWorkflow,
+)
 from app.api.dependencies import (
     get_current_role,
 )
 from app.db import get_db_session
-from app.schemas.document_search import (
-    UserRole,
-)
+from app.schemas.document_search import UserRole
 from app.schemas.query_plan import (
     NaturalLanguageSearchRequest,
     QueryPlan,
@@ -25,9 +27,6 @@ from app.schemas.query_plan import (
 from app.services.query_planner import (
     QueryPlannerService,
     QueryPlanningError,
-)
-from app.services.search_router import (
-    SearchRouterService,
 )
 
 
@@ -47,6 +46,10 @@ router = APIRouter(
 async def create_search_plan(
     request: NaturalLanguageSearchRequest,
 ) -> QueryPlan:
+    """
+    Diagnostic endpoint exposing only query planning.
+    """
+
     planner = QueryPlannerService()
 
     try:
@@ -84,29 +87,48 @@ async def retrieve(
         get_db_session
     ),
 ) -> UnifiedSearchResponse:
-    planner = QueryPlannerService()
+    """
+    Execute the LangGraph retrieval workflow.
+    """
+
+    workflow = VehicleSearchWorkflow(
+        session=session,
+        role=role,
+    )
 
     try:
-        plan = await planner.plan(
+        return await workflow.execute(
             request.query
         )
 
-        router_service = (
-            SearchRouterService(session)
-        )
-
-        return await router_service.execute(
-            original_query=request.query,
-            plan=plan,
-            role=role,
-        )
-
-    except (
-        ClientError,
-        QueryPlanningError,
-    ) as exc:
+    except QueryPlanningError as exc:
         logger.exception(
-            "Search planning failed"
+            "Query planning failed"
+        )
+
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Search planning is temporarily "
+                "unavailable"
+            ),
+        ) from exc
+
+    except ClientError as exc:
+        logger.exception(
+            "AWS service call failed"
+        )
+
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Search is temporarily unavailable"
+            ),
+        ) from exc
+
+    except SQLAlchemyError as exc:
+        logger.exception(
+            "Database operation failed"
         )
 
         raise HTTPException(
