@@ -9,6 +9,7 @@ from app.schemas.vehicle_search import (
     VehicleSort,
 )
 from app.schemas.context import ContextPackage
+from app.schemas.answer import FinalAnswer
 
 class SearchRoute(str, Enum):
     STRUCTURED = "structured"
@@ -161,3 +162,4 @@ class UnifiedSearchResponse(BaseModel):
     structured_results: object | None = None
     document_results: object | None = None
     context: ContextPackage | None = None
+    answer: FinalAnswer | None = None

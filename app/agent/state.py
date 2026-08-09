@@ -1,5 +1,9 @@
 from typing_extensions import TypedDict
 
+from app.schemas.answer import (
+    FinalAnswer,
+    GeneratedAnswer,
+)
 from app.schemas.context import ContextPackage
 from app.schemas.document_search import (
     DocumentSearchResponse,
@@ -26,3 +30,7 @@ class AgentState(TypedDict, total=False):
     document_results: DocumentSearchResponse
 
     context: ContextPackage
+
+    generated_answer: GeneratedAnswer
+
+    final_answer: FinalAnswer
