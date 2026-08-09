@@ -18,6 +18,12 @@ from app.schemas.query_plan import (
 from app.services.query_planner import (
     QueryPlannerService,
 )
+from app.services.answer_generator import (
+    GroundedAnswerService,
+)
+from app.services.answer_validator import (
+    AnswerValidationService,
+)
 
 
 class VehicleSearchWorkflow:
@@ -35,6 +41,12 @@ class VehicleSearchWorkflow:
             ),
             embeddings=(
                 BedrockEmbeddingService()
+            ),
+            answer_generator=(
+                GroundedAnswerService()
+            ),
+            answer_validator=(
+                AnswerValidationService()
             ),
         )
 
@@ -63,4 +75,7 @@ class VehicleSearchWorkflow:
             context=result.get(
                 "context"
             ),
+            answer=result.get(
+                "final_answer"
+            )
         )

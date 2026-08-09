@@ -17,6 +17,12 @@ from app.agent.nodes.planning import (
 from app.agent.nodes.structured_search import (
     structured_search,
 )
+from app.agent.nodes.generate_answer import (
+    generate_answer,
+)
+from app.agent.nodes.validate_answer import (
+    validate_answer,
+)
 from app.agent.routing import (
     route_after_planning,
     route_after_structured_search,
@@ -48,6 +54,16 @@ def build_vehicle_search_graph():
     builder.add_node(
         "build_context",
         build_context,
+    )
+
+    builder.add_node(
+        "generate_answer",
+        generate_answer,
+    )
+
+    builder.add_node(
+        "validate_answer",
+        validate_answer,
     )
 
     builder.add_edge(
@@ -91,6 +107,16 @@ def build_vehicle_search_graph():
 
     builder.add_edge(
         "build_context",
+        "generate_answer",
+    )
+
+    builder.add_edge(
+        "generate_answer",
+        "validate_answer",
+    )
+
+    builder.add_edge(
+        "validate_answer",
         END,
     )
 

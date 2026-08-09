@@ -11,6 +11,7 @@ from app.schemas.document_search import (
 from app.schemas.vehicle_search import (
     VehicleSearchResponse,
 )
+from decimal import Decimal
 
 
 class ContextBuilderService:
@@ -229,6 +230,11 @@ class ContextBuilderService:
             else "unknown"
         )
 
+        price_eur = (
+            Decimal(vehicle.price.amount_minor)
+            / Decimal(100)
+        )
+
         return (
             "<vehicle_evidence>\n"
             f"CITATION: {citation}\n"
@@ -236,8 +242,7 @@ class ContextBuilderService:
             f"MAKE: {vehicle.make}\n"
             f"MODEL: {vehicle.model}\n"
             f"VARIANT: {vehicle.variant or 'unknown'}\n"
-            f"PRICE_MINOR_EUR: "
-            f"{vehicle.price.amount_minor}\n"
+            f"PRICE_EUR: {price_eur:.2f}\n"
             f"YEAR: {vehicle.year}\n"
             f"MILEAGE_KM: {vehicle.mileage_km}\n"
             f"FUEL_TYPE: {vehicle.fuel_type}\n"

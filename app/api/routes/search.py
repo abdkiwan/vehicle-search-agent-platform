@@ -24,6 +24,9 @@ from app.schemas.query_plan import (
     QueryPlan,
     UnifiedSearchResponse,
 )
+from app.schemas.answer import (
+    SearchAnswerResponse,
+)
 from app.services.query_planner import (
     QueryPlannerService,
     QueryPlanningError,
@@ -137,3 +140,40 @@ async def retrieve(
                 "Search is temporarily unavailable"
             ),
         ) from exc
+
+@router.post(
+    "/answer",
+    response_model=SearchAnswerResponse,
+)
+async def answer_search_query(
+    request: NaturalLanguageSearchRequest,
+    role: UserRole = Depends(
+        get_current_role
+    ),
+    session: AsyncSession = Depends(
+        get_db_session
+    ),
+) -> SearchAnswerResponse:
+
+    workflow = VehicleSearchWorkflow(
+        session=session,
+        role=role,
+    )
+
+    result = await workflow.execute(
+        request.query
+    )
+
+    if result.answer is None:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Answer generation did not "
+                "complete."
+            ),
+        )
+
+    return SearchAnswerResponse(
+        query=request.query,
+        answer=result.answer,
+    )
