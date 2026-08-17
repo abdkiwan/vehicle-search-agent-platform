@@ -114,7 +114,9 @@ async def document_search(
 
     results = await service.search(
         request=request,
-        role=runtime.context.role,
+        roles=(
+            runtime.context.principal.roles
+        )
     )
 
     return {

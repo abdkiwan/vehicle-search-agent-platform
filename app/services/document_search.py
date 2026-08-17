@@ -29,7 +29,7 @@ class DocumentSearchService:
     async def search(
         self,
         request: DocumentSearchRequest,
-        role: UserRole,
+        roles: list[UserRole],
     ) -> DocumentSearchResponse:
         query_embedding = (
             await self._embeddings.embed(
@@ -40,7 +40,7 @@ class DocumentSearchService:
         keyword_results = (
             await self._repository.keyword_search(
                 request=request,
-                role=role,
+                roles=roles,
                 candidate_limit=(
                     settings.hybrid_candidate_limit
                 ),
@@ -50,7 +50,7 @@ class DocumentSearchService:
         vector_results = (
             await self._repository.vector_search(
                 request=request,
-                role=role,
+                roles=roles,
                 query_embedding=query_embedding,
                 candidate_limit=(
                     settings.hybrid_candidate_limit

@@ -12,6 +12,9 @@ from app.schemas.query_plan import QueryPlan
 from app.schemas.vehicle_search import (
     VehicleSearchResponse,
 )
+from app.schemas.security import (
+    PromptSecurityResult,
+)
 
 
 class AgentState(TypedDict, total=False):
@@ -23,6 +26,8 @@ class AgentState(TypedDict, total=False):
 
     query: str
 
+    input_security: PromptSecurityResult
+
     plan: QueryPlan
 
     structured_results: VehicleSearchResponse
@@ -30,6 +35,8 @@ class AgentState(TypedDict, total=False):
     document_results: DocumentSearchResponse
 
     context: ContextPackage
+
+    context_security: PromptSecurityResult
 
     generated_answer: GeneratedAnswer
 

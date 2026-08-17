@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_role
 from app.db import get_db_session
 from app.repositories.document_repository import (
     DocumentRepository,
@@ -20,6 +19,12 @@ from app.schemas.document_search import (
 )
 from app.services.document_search import (
     DocumentSearchService,
+)
+from app.schemas.security import (
+    AuthenticatedPrincipal,
+)
+from app.security.auth import (
+    get_current_principal,
 )
 
 
@@ -38,9 +43,11 @@ router = APIRouter(
 )
 async def search_documents(
     request: DocumentSearchRequest,
-    role: UserRole = Depends(
-        get_current_role
-    ),
+    principal:
+        AuthenticatedPrincipal
+        = Depends(
+            get_current_principal
+        ),
     session: AsyncSession = Depends(
         get_db_session
     ),
@@ -55,7 +62,7 @@ async def search_documents(
     try:
         return await service.search(
             request=request,
-            role=role,
+            roles=principal.roles,
         )
 
     except ClientError as exc:

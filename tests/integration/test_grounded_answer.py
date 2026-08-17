@@ -20,9 +20,6 @@ async def test_grounded_vehicle_answer():
     ) as client:
         response = await client.post(
             "/api/v1/search/answer",
-            headers={
-                "X-User-Role": "customer",
-            },
             json={
                 "query": (
                     "Find Volkswagen Golf cars "
