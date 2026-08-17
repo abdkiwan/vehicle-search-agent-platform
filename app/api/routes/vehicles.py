@@ -11,7 +11,12 @@ from app.schemas.vehicle_search import (
     VehicleSearchResponse,
 )
 from app.services.vehicle_search import VehicleSearchService
-
+from app.schemas.security import (
+    AuthenticatedPrincipal,
+)
+from app.security.auth import (
+    get_current_principal,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +32,11 @@ router = APIRouter(
 )
 async def search_vehicles(
     request: VehicleSearchRequest,
+    principal:
+        AuthenticatedPrincipal
+        = Depends(
+            get_current_principal
+        ),
     session: AsyncSession = Depends(get_db_session),
 ) -> VehicleSearchResponse:
     service = VehicleSearchService(

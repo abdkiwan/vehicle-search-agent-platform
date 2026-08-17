@@ -20,9 +20,6 @@ async def test_structured_workflow():
     ) as client:
         response = await client.post(
             "/api/v1/search/retrieve",
-            headers={
-                "X-User-Role": "customer",
-            },
             json={
                 "query": (
                     "Find Volkswagen Golf cars "
@@ -65,9 +62,6 @@ async def test_unstructured_workflow():
     ) as client:
         response = await client.post(
             "/api/v1/search/retrieve",
-            headers={
-                "X-User-Role": "customer",
-            },
             json={
                 "query": (
                     "Can I return a vehicle "
@@ -110,9 +104,6 @@ async def test_hybrid_workflow():
     ) as client:
         response = await client.post(
             "/api/v1/search/retrieve",
-            headers={
-                "X-User-Role": "customer",
-            },
             json={
                 "query": (
                     "Find Volkswagen Golf cars "
@@ -176,9 +167,6 @@ async def test_unsupported_workflow():
     ) as client:
         response = await client.post(
             "/api/v1/search/retrieve",
-            headers={
-                "X-User-Role": "customer",
-            },
             json={
                 "query": (
                     "What is the weather tomorrow?"

@@ -10,6 +10,9 @@ from app.schemas.vehicle_search import (
 )
 from app.schemas.context import ContextPackage
 from app.schemas.answer import FinalAnswer
+from app.schemas.security import (
+    PromptSecurityResult,
+)
 
 class SearchRoute(str, Enum):
     STRUCTURED = "structured"
@@ -158,8 +161,14 @@ class QueryPlan(BaseModel):
 
 class UnifiedSearchResponse(BaseModel):
     query: str
-    plan: QueryPlan
+    plan: QueryPlan | None = None
     structured_results: object | None = None
     document_results: object | None = None
     context: ContextPackage | None = None
+    input_security: (
+        PromptSecurityResult | None
+    ) = None
+    context_security: (
+        PromptSecurityResult | None
+    ) = None
     answer: FinalAnswer | None = None

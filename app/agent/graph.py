@@ -23,10 +23,22 @@ from app.agent.nodes.generate_answer import (
 from app.agent.nodes.validate_answer import (
     validate_answer,
 )
+from app.agent.nodes.context_security import (
+    check_context_security,
+)
+from app.agent.nodes.input_security import (
+    check_input_security,
+)
+from app.agent.nodes.security_rejection import (
+    reject_security_request,
+)
 from app.agent.routing import (
+    route_after_context_security,
+    route_after_input_security,
     route_after_planning,
     route_after_structured_search,
 )
+
 from app.agent.state import AgentState
 
 
@@ -66,9 +78,33 @@ def build_vehicle_search_graph():
         validate_answer,
     )
 
+    builder.add_node(
+        "check_input_security",
+        check_input_security,
+    )
+
+    builder.add_node(
+        "check_context_security",
+        check_context_security,
+    )
+
+    builder.add_node(
+        "security_reject",
+        reject_security_request,
+    )
+
     builder.add_edge(
         START,
-        "plan_query",
+        "check_input_security",
+    )
+
+    builder.add_conditional_edges(
+        "check_input_security",
+        route_after_input_security,
+        {
+            "plan": "plan_query",
+            "blocked": "security_reject",
+        },
     )
 
     builder.add_conditional_edges(
@@ -107,7 +143,16 @@ def build_vehicle_search_graph():
 
     builder.add_edge(
         "build_context",
-        "generate_answer",
+        "check_context_security",
+    )
+
+    builder.add_conditional_edges(
+        "check_context_security",
+        route_after_context_security,
+        {
+            "generate": "generate_answer",
+            "blocked": "security_reject",
+        },
     )
 
     builder.add_edge(
@@ -117,6 +162,11 @@ def build_vehicle_search_graph():
 
     builder.add_edge(
         "validate_answer",
+        END,
+    )
+
+    builder.add_edge(
+        "security_reject",
         END,
     )
 

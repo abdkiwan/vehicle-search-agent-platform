@@ -14,9 +14,6 @@ from sqlalchemy.ext.asyncio import (
 from app.agent.workflow import (
     VehicleSearchWorkflow,
 )
-from app.api.dependencies import (
-    get_current_role,
-)
 from app.db import get_db_session
 from app.schemas.document_search import UserRole
 from app.schemas.query_plan import (
@@ -30,6 +27,12 @@ from app.schemas.answer import (
 from app.services.query_planner import (
     QueryPlannerService,
     QueryPlanningError,
+)
+from app.schemas.security import (
+    AuthenticatedPrincipal,
+)
+from app.security.auth import (
+    get_current_principal,
 )
 
 
@@ -48,10 +51,31 @@ router = APIRouter(
 )
 async def create_search_plan(
     request: NaturalLanguageSearchRequest,
+    principal:
+    AuthenticatedPrincipal
+    = Depends(
+        get_current_principal
+    ),
 ) -> QueryPlan:
     """
     Diagnostic endpoint exposing only query planning.
     """
+
+    security = PromptInjectionService()
+
+    assessment = await security.assess(
+        text=request.query,
+        source=PromptSecuritySource.USER_INPUT,
+    )
+
+    if not assessment.allowed:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Request rejected by input "
+                "security policy."
+            ),
+        )
 
     planner = QueryPlannerService()
 
@@ -83,9 +107,11 @@ async def create_search_plan(
 )
 async def retrieve(
     request: NaturalLanguageSearchRequest,
-    role: UserRole = Depends(
-        get_current_role
-    ),
+    principal:
+        AuthenticatedPrincipal
+        = Depends(
+            get_current_principal
+        ),
     session: AsyncSession = Depends(
         get_db_session
     ),
@@ -96,7 +122,7 @@ async def retrieve(
 
     workflow = VehicleSearchWorkflow(
         session=session,
-        role=role,
+        principal=principal,
     )
 
     try:
@@ -147,9 +173,11 @@ async def retrieve(
 )
 async def answer_search_query(
     request: NaturalLanguageSearchRequest,
-    role: UserRole = Depends(
-        get_current_role
-    ),
+    principal:
+        AuthenticatedPrincipal
+        = Depends(
+            get_current_principal
+        ),
     session: AsyncSession = Depends(
         get_db_session
     ),
@@ -157,7 +185,7 @@ async def answer_search_query(
 
     workflow = VehicleSearchWorkflow(
         session=session,
-        role=role,
+        principal=principal,
     )
 
     result = await workflow.execute(

@@ -43,3 +43,35 @@ def route_after_structured_search(
         return "documents"
 
     return "context"
+
+
+def route_after_input_security(
+    state: AgentState,
+) -> Literal[
+    "plan",
+    "blocked",
+]:
+
+    if (
+        state["input_security"]
+        .allowed
+    ):
+        return "plan"
+
+    return "blocked"
+
+
+def route_after_context_security(
+    state: AgentState,
+) -> Literal[
+    "generate",
+    "blocked",
+]:
+
+    if (
+        state["context_security"]
+        .allowed
+    ):
+        return "generate"
+
+    return "blocked"

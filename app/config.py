@@ -46,6 +46,12 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    cognito_user_pool_id: str
+    cognito_app_client_id: str
+
+    bedrock_security_guardrail_id: str
+    bedrock_security_guardrail_version: str
+
 
 @lru_cache
 def get_settings() -> Settings:

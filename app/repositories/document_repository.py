@@ -39,9 +39,18 @@ class DocumentRepository:
     async def keyword_search(
         self,
         request: DocumentSearchRequest,
-        role: UserRole,
+        roles: list[UserRole],
         candidate_limit: int,
     ) -> list[DocumentCandidate]:
+
+        role_values = [
+            role.value
+            for role in roles
+        ]
+
+        if not role_values:
+            return []
+
         query = func.websearch_to_tsquery(
             "english",
             request.query,
@@ -69,8 +78,8 @@ class DocumentRepository:
                 )
             )
             .where(
-                Document.allowed_roles.any(
-                    role.value
+                Document.allowed_roles.overlap(
+                    role_values
                 )
             )
             .where(
@@ -137,10 +146,18 @@ class DocumentRepository:
     async def vector_search(
         self,
         request: DocumentSearchRequest,
-        role: UserRole,
+        roles: list[UserRole],
         query_embedding: list[float],
         candidate_limit: int,
     ) -> list[DocumentCandidate]:
+        role_values = [
+            role.value
+            for role in roles
+        ]
+
+        if not role_values:
+            return []
+
         distance = (
             DocumentChunk.embedding.cosine_distance(
                 query_embedding
@@ -159,8 +176,8 @@ class DocumentRepository:
                 == DocumentChunk.document_id,
             )
             .where(
-                Document.allowed_roles.any(
-                    role.value
+                Document.allowed_roles.overlap(
+                    role_values
                 )
             )
             .where(

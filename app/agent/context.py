@@ -5,7 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.retrieval.embeddings import (
     BedrockEmbeddingService,
 )
-from app.schemas.document_search import UserRole
+from app.schemas.security import (
+    AuthenticatedPrincipal,
+)
+from app.security.prompt_security import (
+    PromptInjectionService,
+)
 from app.services.answer_generator import (
     GroundedAnswerService,
 )
@@ -19,13 +24,9 @@ from app.services.query_planner import (
 
 @dataclass(frozen=True)
 class AgentRuntimeContext:
-    """
-    Immutable dependencies available during one graph execution.
-    """
-
     session: AsyncSession
-    
-    role: UserRole
+
+    principal: AuthenticatedPrincipal
 
     query_planner: QueryPlannerService
 
@@ -34,3 +35,5 @@ class AgentRuntimeContext:
     answer_generator: GroundedAnswerService
 
     answer_validator: AnswerValidationService
+
+    prompt_security: PromptInjectionService

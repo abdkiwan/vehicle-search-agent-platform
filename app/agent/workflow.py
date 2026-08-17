@@ -24,6 +24,12 @@ from app.services.answer_generator import (
 from app.services.answer_validator import (
     AnswerValidationService,
 )
+from app.schemas.security import (
+    AuthenticatedPrincipal,
+)
+from app.security.prompt_security import (
+    PromptInjectionService,
+)
 
 
 class VehicleSearchWorkflow:
@@ -31,22 +37,31 @@ class VehicleSearchWorkflow:
         self,
         *,
         session: AsyncSession,
-        role: UserRole,
+        principal: AuthenticatedPrincipal,
     ) -> None:
+
         self._context = AgentRuntimeContext(
             session=session,
-            role=role,
+            principal=principal,
+
             query_planner=(
                 QueryPlannerService()
             ),
+
             embeddings=(
                 BedrockEmbeddingService()
             ),
+
             answer_generator=(
                 GroundedAnswerService()
             ),
+
             answer_validator=(
                 AnswerValidationService()
+            ),
+
+            prompt_security=(
+                PromptInjectionService()
             ),
         )
 
@@ -65,17 +80,32 @@ class VehicleSearchWorkflow:
 
         return UnifiedSearchResponse(
             query=query,
-            plan=result["plan"],
+
+            plan=result.get(
+                "plan"
+            ),
+
             structured_results=result.get(
                 "structured_results"
             ),
+
             document_results=result.get(
                 "document_results"
             ),
+
             context=result.get(
                 "context"
             ),
+
+            input_security=result.get(
+                "input_security"
+            ),
+
+            context_security=result.get(
+                "context_security"
+            ),
+
             answer=result.get(
                 "final_answer"
-            )
+            ),
         )

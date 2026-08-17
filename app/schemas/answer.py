@@ -16,6 +16,8 @@ class AnswerStatus(str, Enum):
         "validation_failed"
     )
 
+    SECURITY_BLOCKED = "security_blocked"
+
 
 class GeneratedAnswer(BaseModel):
     status: AnswerStatus
