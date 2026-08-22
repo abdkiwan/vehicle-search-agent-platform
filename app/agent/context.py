@@ -20,6 +20,9 @@ from app.services.answer_validator import (
 from app.services.query_planner import (
     QueryPlannerService,
 )
+from app.observability.telemetry import (
+    RunTelemetry,
+)
 
 
 @dataclass(frozen=True)
@@ -37,3 +40,5 @@ class AgentRuntimeContext:
     answer_validator: AnswerValidationService
 
     prompt_security: PromptInjectionService
+
+    telemetry: RunTelemetry

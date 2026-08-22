@@ -8,8 +8,12 @@ from app.repositories.vehicle_repository import (
 from app.services.vehicle_search import (
     VehicleSearchService,
 )
+from app.observability.nodes import (
+    observed_stage,
+)
 
 
+@observed_stage("structured_search")
 async def structured_search(
     state: AgentState,
     runtime: Runtime[AgentRuntimeContext],

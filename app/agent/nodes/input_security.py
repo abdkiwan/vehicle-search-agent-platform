@@ -7,8 +7,12 @@ from app.agent.state import AgentState
 from app.schemas.security import (
     PromptSecuritySource,
 )
+from app.observability.nodes import (
+    observed_stage,
+)
 
 
+@observed_stage("check_input_security")
 async def check_input_security(
     state: AgentState,
     runtime: Runtime[AgentRuntimeContext],

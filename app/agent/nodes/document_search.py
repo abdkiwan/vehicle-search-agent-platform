@@ -15,8 +15,12 @@ from app.schemas.query_plan import (
 from app.services.document_search import (
     DocumentSearchService,
 )
+from app.observability.nodes import (
+    observed_stage,
+)
 
 
+@observed_stage("document_search")
 async def document_search(
     state: AgentState,
     runtime: Runtime[AgentRuntimeContext],
