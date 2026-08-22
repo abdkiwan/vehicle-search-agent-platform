@@ -1,11 +1,20 @@
+from langgraph.runtime import Runtime
+from app.agent.context import (
+    AgentRuntimeContext,
+)
 from app.agent.state import AgentState
 from app.services.context_builder import (
     ContextBuilderService,
 )
+from app.observability.nodes import (
+    observed_stage,
+)
 
 
+@observed_stage("build_context")
 async def build_context(
     state: AgentState,
+    runtime: Runtime[AgentRuntimeContext],
 ) -> dict:
     """
     Build deterministic, bounded context from

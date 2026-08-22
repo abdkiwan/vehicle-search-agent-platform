@@ -13,6 +13,9 @@ from app.schemas.answer import FinalAnswer
 from app.schemas.security import (
     PromptSecurityResult,
 )
+from app.schemas.telemetry import (
+    TelemetrySummary,
+)
 
 class SearchRoute(str, Enum):
     STRUCTURED = "structured"
@@ -172,3 +175,6 @@ class UnifiedSearchResponse(BaseModel):
         PromptSecurityResult | None
     ) = None
     answer: FinalAnswer | None = None
+    telemetry: (
+        TelemetrySummary | None
+    ) = None

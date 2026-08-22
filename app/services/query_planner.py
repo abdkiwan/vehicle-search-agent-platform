@@ -14,7 +14,15 @@ from app.schemas.query_plan import (
     SearchRoute,
 )
 from app.schemas.vehicle_search import VehicleSearchRequest
-
+from app.cache.redis_cache import (
+    RedisCache,
+)
+from app.observability.costs import (
+    estimate_converse_cost,
+)
+from app.observability.telemetry import (
+    RunTelemetry,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -499,7 +507,12 @@ class QueryPlannerService:
 
     MAX_PLANNER_ATTEMPTS = 2
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        cache: RedisCache | None = None,
+        telemetry: RunTelemetry | None = None,
+    ) -> None:
         session = boto3.Session(
             profile_name=settings.aws_profile,
             region_name=settings.aws_region,
@@ -507,6 +520,9 @@ class QueryPlannerService:
         self._client = session.client(
             "bedrock-runtime"
         )
+
+        self._cache = cache
+        self._telemetry = telemetry
 
     def _invoke_model(
         self,
@@ -536,7 +552,7 @@ class QueryPlannerService:
                 Do not explain the correction outside the tool call.
                 """
 
-        return self._client.converse(
+        response = self._client.converse(
             modelId=settings.bedrock_planner_model_id,
             system=[
                 {
@@ -559,17 +575,66 @@ class QueryPlannerService:
                 ],
                 "toolChoice": {
                     "tool": {
-                        "name": "submit_query_plan",
+                        "name": (
+                            "submit_query_plan"
+                        ),
                     }
                 },
             },
             inferenceConfig={
                 "temperature": 0,
                 "maxTokens": (
-                    settings.bedrock_planner_max_tokens
+                    settings
+                    .bedrock_planner_max_tokens
                 ),
             },
         )
+
+        if self._telemetry:
+            usage = response.get(
+                "usage",
+                {},
+            )
+
+            input_tokens = int(
+                usage.get(
+                    "inputTokens",
+                    0,
+                )
+            )
+
+            output_tokens = int(
+                usage.get(
+                    "outputTokens",
+                    0,
+                )
+            )
+
+            self._telemetry.record_model_usage(
+                operation="query_planner",
+                model_id=(
+                    settings
+                    .bedrock_planner_model_id
+                ),
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                estimated_cost_usd=(
+                    estimate_converse_cost(
+                        model_id=(
+                            settings
+                            .bedrock_planner_model_id
+                        ),
+                        input_tokens=(
+                            input_tokens
+                        ),
+                        output_tokens=(
+                            output_tokens
+                        ),
+                    )
+                ),
+            )
+
+        return response
 
     @staticmethod
     def _extract_tool_input(
@@ -684,19 +749,84 @@ class QueryPlannerService:
         self,
         user_query: str,
     ) -> QueryPlan:
-        """
-        Public asynchronous API used by FastAPI and later LangGraph.
-        """
+
+        normalized_query = " ".join(
+            user_query.split()
+        )
+
+        cache_key = None
+
+        if self._cache is not None:
+            cache_key = (
+                self._cache.build_key(
+                    "planner",
+                    {
+                        "query": (
+                            normalized_query
+                        ),
+                        "model": (
+                            settings
+                            .bedrock_planner_model_id
+                        ),
+                        "prompt_version": (
+                            settings
+                            .planner_prompt_version
+                        ),
+                    },
+                    version=(
+                        settings
+                        .cache_key_version
+                    ),
+                )
+            )
+
+            cached = (
+                await self._cache.get_json(
+                    cache_key,
+                    telemetry=self._telemetry,
+                )
+            )
+
+            if cached is not None:
+                try:
+                    return (
+                        QueryPlan.model_validate(
+                            cached
+                        )
+                    )
+
+                except ValidationError:
+                    logger.warning(
+                        "invalid_cached_query_plan"
+                    )
 
         planner_output = await asyncio.to_thread(
             self._invoke,
             user_query,
         )
 
-        return self._build_query_plan(
+        plan = self._build_query_plan(
             planner_output,
             original_query=user_query,
         )
+
+        if (
+            self._cache is not None
+            and cache_key is not None
+        ):
+            await self._cache.set_json(
+                cache_key,
+                plan.model_dump(
+                    mode="json"
+                ),
+                ttl_seconds=(
+                    settings
+                    .planner_cache_ttl_seconds
+                ),
+                telemetry=self._telemetry,
+            )
+
+        return plan
 
     @staticmethod
     def _build_query_plan(

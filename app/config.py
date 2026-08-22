@@ -52,6 +52,42 @@ class Settings(BaseSettings):
     bedrock_security_guardrail_id: str
     bedrock_security_guardrail_version: str
 
+    cache_enabled: bool = True
+
+    redis_url: str = (
+        "redis://localhost:6379/0"
+    )
+
+    redis_socket_timeout_seconds: float = 0.5
+
+    planner_cache_ttl_seconds: int = 3600
+
+    embedding_cache_ttl_seconds: int = 86400
+
+    cache_key_version: str = "v1"
+
+    planner_prompt_version: str = "v1"
+
+    bedrock_nova_lite_input_usd_per_million_tokens: (
+        float | None
+    ) = None
+
+    bedrock_nova_lite_output_usd_per_million_tokens: (
+        float | None
+    ) = None
+
+    bedrock_nova_pro_input_usd_per_million_tokens: (
+        float | None
+    ) = None
+
+    bedrock_nova_pro_output_usd_per_million_tokens: (
+        float | None
+    ) = None
+
+    bedrock_titan_embed_input_usd_per_million_tokens: (
+        float | None
+    ) = None
+
 
 @lru_cache
 def get_settings() -> Settings:

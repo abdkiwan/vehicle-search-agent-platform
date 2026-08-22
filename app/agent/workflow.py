@@ -30,7 +30,21 @@ from app.schemas.security import (
 from app.security.prompt_security import (
     PromptInjectionService,
 )
+from app.cache.redis_cache import (
+    get_redis_cache,
+)
+from app.observability.context import (
+    get_request_id,
+)
+from app.observability.telemetry import (
+    RunTelemetry,
+)
 
+import logging
+
+logger = logging.getLogger(
+    __name__
+)
 
 class VehicleSearchWorkflow:
     def __init__(
@@ -40,29 +54,50 @@ class VehicleSearchWorkflow:
         principal: AuthenticatedPrincipal,
     ) -> None:
 
-        self._context = AgentRuntimeContext(
-            session=session,
-            principal=principal,
+        telemetry = RunTelemetry(
+            request_id=get_request_id()
+        )
 
-            query_planner=(
-                QueryPlannerService()
-            ),
+        cache = get_redis_cache()
 
-            embeddings=(
-                BedrockEmbeddingService()
-            ),
+        self._telemetry = telemetry
 
-            answer_generator=(
-                GroundedAnswerService()
-            ),
+        self._context = (
+            AgentRuntimeContext(
+                session=session,
 
-            answer_validator=(
-                AnswerValidationService()
-            ),
+                principal=principal,
 
-            prompt_security=(
-                PromptInjectionService()
-            ),
+                query_planner=(
+                    QueryPlannerService(
+                        cache=cache,
+                        telemetry=telemetry,
+                    )
+                ),
+
+                embeddings=(
+                    BedrockEmbeddingService(
+                        cache=cache,
+                        telemetry=telemetry,
+                    )
+                ),
+
+                answer_generator=(
+                    GroundedAnswerService(
+                        telemetry=telemetry
+                    )
+                ),
+
+                answer_validator=(
+                    AnswerValidationService()
+                ),
+
+                prompt_security=(
+                    PromptInjectionService()
+                ),
+
+                telemetry=telemetry,
+            )
         )
 
     async def execute(
@@ -76,6 +111,52 @@ class VehicleSearchWorkflow:
                 },
                 context=self._context,
             )
+        )
+
+        telemetry = (
+            self._telemetry.snapshot()
+        )
+
+        logger.info(
+            "agent_run_complete",
+            extra={
+                "event_data": {
+                    "route": (
+                        result.get("plan").route
+                        if result.get("plan")
+                        else None
+                    ),
+                    "answer_status": (
+                        result.get(
+                            "final_answer"
+                        ).status
+                        if result.get(
+                            "final_answer"
+                        )
+                        else None
+                    ),
+                    "total_latency_ms": (
+                        telemetry
+                        .total_latency_ms
+                    ),
+                    "total_tokens": (
+                        telemetry.total_tokens
+                    ),
+                    "estimated_cost_usd": (
+                        telemetry
+                        .estimated_cost_usd
+                    ),
+                    "cache_hits": (
+                        telemetry.cache.hits
+                    ),
+                    "cache_misses": (
+                        telemetry.cache.misses
+                    ),
+                    "cache_errors": (
+                        telemetry.cache.errors
+                    ),
+                }
+            },
         )
 
         return UnifiedSearchResponse(
@@ -108,4 +189,6 @@ class VehicleSearchWorkflow:
             answer=result.get(
                 "final_answer"
             ),
+
+            telemetry=telemetry,
         )

@@ -13,7 +13,12 @@ from app.schemas.answer import (
 )
 from app.schemas.context import ContextPackage
 from app.schemas.query_plan import SearchRoute
-
+from app.observability.costs import (
+    estimate_converse_cost,
+)
+from app.observability.telemetry import (
+    RunTelemetry,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -258,7 +263,12 @@ class GroundedAnswerService:
 
     MAX_ATTEMPTS = 2
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        telemetry:
+            RunTelemetry | None = None,
+    ) -> None:
         session = boto3.Session(
             profile_name=settings.aws_profile,
             region_name=settings.aws_region,
@@ -266,6 +276,8 @@ class GroundedAnswerService:
         self._client = session.client(
             "bedrock-runtime"
         )
+
+        self._telemetry = telemetry
 
     def _invoke_model(
         self,
@@ -316,7 +328,7 @@ Remember:
 </retrieved_evidence>
 """
 
-        return self._client.converse(
+        response = self._client.converse(
             modelId=settings.bedrock_answer_model_id,
             system=[
                 {
@@ -339,17 +351,68 @@ Remember:
                 ],
                 "toolChoice": {
                     "tool": {
-                        "name": "submit_grounded_answer",
+                        "name": (
+                            "submit_grounded_answer"
+                        ),
                     }
                 },
             },
             inferenceConfig={
                 "temperature": 0,
                 "maxTokens": (
-                    settings.bedrock_answer_max_tokens
+                    settings
+                    .bedrock_answer_max_tokens
                 ),
             },
         )
+
+        if self._telemetry:
+            usage = response.get(
+                "usage",
+                {},
+            )
+
+            input_tokens = int(
+                usage.get(
+                    "inputTokens",
+                    0,
+                )
+            )
+
+            output_tokens = int(
+                usage.get(
+                    "outputTokens",
+                    0,
+                )
+            )
+
+            self._telemetry.record_model_usage(
+                operation=(
+                    "answer_generation"
+                ),
+                model_id=(
+                    settings
+                    .bedrock_answer_model_id
+                ),
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                estimated_cost_usd=(
+                    estimate_converse_cost(
+                        model_id=(
+                            settings
+                            .bedrock_answer_model_id
+                        ),
+                        input_tokens=(
+                            input_tokens
+                        ),
+                        output_tokens=(
+                            output_tokens
+                        ),
+                    )
+                ),
+            )
+
+        return response
 
     @staticmethod
     def _extract_tool_input(

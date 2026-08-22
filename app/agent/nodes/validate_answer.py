@@ -4,8 +4,12 @@ from app.agent.context import (
     AgentRuntimeContext,
 )
 from app.agent.state import AgentState
+from app.observability.nodes import (
+    observed_stage,
+)
 
 
+@observed_stage("validate_answer")
 async def validate_answer(
     state: AgentState,
     runtime: Runtime[AgentRuntimeContext],

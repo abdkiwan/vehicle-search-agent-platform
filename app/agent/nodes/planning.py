@@ -2,8 +2,12 @@ from langgraph.runtime import Runtime
 
 from app.agent.context import AgentRuntimeContext
 from app.agent.state import AgentState
+from app.observability.nodes import (
+    observed_stage,
+)
 
 
+@observed_stage("plan_query")
 async def plan_query(
     state: AgentState,
     runtime: Runtime[AgentRuntimeContext],

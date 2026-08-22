@@ -8,8 +8,12 @@ from app.schemas.security import (
     PromptSecurityResult,
     PromptSecuritySource,
 )
+from app.observability.nodes import (
+    observed_stage,
+)
 
 
+@observed_stage("check_context_security")
 async def check_context_security(
     state: AgentState,
     runtime: Runtime[AgentRuntimeContext],

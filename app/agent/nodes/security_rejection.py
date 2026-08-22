@@ -1,4 +1,8 @@
 from app.agent.state import AgentState
+from langgraph.runtime import Runtime
+from app.agent.context import (
+    AgentRuntimeContext,
+)
 from app.schemas.answer import (
     AnswerStatus,
     AnswerValidationResult,
@@ -6,10 +10,15 @@ from app.schemas.answer import (
     FinalAnswer,
     GroundingValidationResult,
 )
+from app.observability.nodes import (
+    observed_stage,
+)
 
 
+@observed_stage("reject_security_request")
 async def reject_security_request(
     state: AgentState,
+    runtime: Runtime[AgentRuntimeContext],
 ) -> dict:
 
     return {

@@ -4,7 +4,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db_session
-
+from app.cache.redis_cache import (
+    get_redis_cache,
+)
 
 router = APIRouter(tags=["health"])
 
@@ -27,3 +29,18 @@ async def readiness(
         ) from exc
 
     return {"status": "ready"}
+
+
+@router.get("/health/cache")
+async def cache_health():
+    cache = get_redis_cache()
+
+    healthy = await cache.ping()
+
+    return {
+        "status": (
+            "healthy"
+            if healthy
+            else "unavailable"
+        )
+    }
